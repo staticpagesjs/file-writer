@@ -90,8 +90,8 @@ export const optionsFromCliParameters = (cliParams: object = {}) => {
 	return options;
 };
 
-export const cli = (options: object = {}) => {
-	return fileWriter(optionsFromCliParameters(options));
+export const cli = (cliParams: object = {}) => {
+	return fileWriter(optionsFromCliParameters(cliParams));
 };
 
 export default fileWriter;
