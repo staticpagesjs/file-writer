@@ -69,25 +69,25 @@ export const fileWriter = (options: FileWriterOptions) => {
 
 const isFunctionLike = /^\s*(?:async)?\s*(?:\([a-zA-Z0-9_, ]*\)\s*=>|[a-zA-Z0-9_,]+\s*=>|function\s*\*?\s*[a-zA-Z0-9_,]*\s*\([a-zA-Z0-9_,]*\)\s*{)/;
 
-export const optionsFromCliParameters = (options: object = {}) => {
-	const { outFile, renderer, ...rest } = options as FileWriterOptions;
-	const opts = { ...rest } as FileWriterOptions;
+export const optionsFromCliParameters = (cliParams: object = {}) => {
+	const { outFile, renderer, ...rest } = cliParams as FileWriterOptions;
+	const options = { ...rest } as FileWriterOptions;
 
 	if (typeof outFile === 'string') {
 		if (!isFunctionLike.test(outFile)) {
 			throw new Error('file-writer \'outFile\' parameter error: provided string does not look like a function.');
 		}
-		opts.outFile = new Script(outFile).runInNewContext();
+		options.outFile = new Script(outFile).runInNewContext();
 	}
 
 	if (typeof renderer === 'string') {
 		if (!isFunctionLike.test(renderer)) {
 			throw new Error('file-writer \'renderer\' parameter error: provided string does not look like a function.');
 		}
-		opts.renderer = new Script(renderer).runInNewContext();
+		options.renderer = new Script(renderer).runInNewContext();
 	}
 
-	return opts;
+	return options;
 };
 
 export const cli = (options: object = {}) => {
