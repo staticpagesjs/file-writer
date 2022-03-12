@@ -2,13 +2,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Script } from 'vm';
 
-export interface WriterOptions {
+export type FileWriterOptions = {
 	outDir?: string;
 	outFile?: { (data: Record<string, unknown>): string | Promise<string> };
 	renderer?: { (data: Record<string, unknown>): string | Promise<string> };
-}
+};
 
-export default function writer(options: WriterOptions) {
+export function fileWriter(options: FileWriterOptions) {
 	let unnamedCounter = 1;
 	const {
 		outDir = 'build',
@@ -56,8 +56,8 @@ export default function writer(options: WriterOptions) {
 const isFunctionLike = /^\s*(?:async)?\s*(?:\([a-zA-Z0-9_, ]*\)\s*=>|[a-zA-Z0-9_,]+\s*=>|function\s*\*?\s*[a-zA-Z0-9_,]*\s*\([a-zA-Z0-9_,]*\)\s*{)/;
 
 export function cli(options: unknown = {}) {
-	const { outFile, renderer, ...rest } = options as WriterOptions;
-	const opts = { ...rest } as WriterOptions;
+	const { outFile, renderer, ...rest } = options as FileWriterOptions;
+	const opts = { ...rest } as FileWriterOptions;
 
 	if (typeof outFile === 'string') {
 		if (!isFunctionLike.test(outFile)) {
@@ -74,5 +74,7 @@ export function cli(options: unknown = {}) {
 	}
 	opts.renderer = new Script(renderer).runInNewContext();
 
-	return writer(opts);
+	return fileWriter(opts);
 }
+
+export default fileWriter;
