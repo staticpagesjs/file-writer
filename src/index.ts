@@ -8,7 +8,7 @@ export type FileWriterOptions = {
 	renderer?: { (data: Record<string, unknown>): string | Promise<string> };
 };
 
-export function fileWriter(options: FileWriterOptions) {
+export const fileWriter = (options: FileWriterOptions) => {
 	let unnamedCounter = 1;
 	const {
 		outDir = 'build',
@@ -51,11 +51,11 @@ export function fileWriter(options: FileWriterOptions) {
 		fileCache.add(outputPath);
 		fs.writeFileSync(outputPath, await renderer(data));
 	};
-}
+};
 
 const isFunctionLike = /^\s*(?:async)?\s*(?:\([a-zA-Z0-9_, ]*\)\s*=>|[a-zA-Z0-9_,]+\s*=>|function\s*\*?\s*[a-zA-Z0-9_,]*\s*\([a-zA-Z0-9_,]*\)\s*{)/;
 
-export function cli(options: unknown = {}) {
+export const cli = (options: unknown = {}) => {
 	const { outFile, renderer, ...rest } = options as FileWriterOptions;
 	const opts = { ...rest } as FileWriterOptions;
 
@@ -75,6 +75,6 @@ export function cli(options: unknown = {}) {
 	opts.renderer = new Script(renderer).runInNewContext();
 
 	return fileWriter(opts);
-}
+};
 
 export default fileWriter;
