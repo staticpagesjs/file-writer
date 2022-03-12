@@ -69,7 +69,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 
 const isFunctionLike = /^\s*(?:async)?\s*(?:\([a-zA-Z0-9_, ]*\)\s*=>|[a-zA-Z0-9_,]+\s*=>|function\s*\*?\s*[a-zA-Z0-9_,]*\s*\([a-zA-Z0-9_,]*\)\s*{)/;
 
-export const prepareCli = (options: object = {}) => {
+export const optionsFromCliParameters = (options: object = {}) => {
 	const { outFile, renderer, ...rest } = options as FileWriterOptions;
 	const opts = { ...rest } as FileWriterOptions;
 
@@ -91,7 +91,7 @@ export const prepareCli = (options: object = {}) => {
 };
 
 export const cli = (options: object = {}) => {
-	return fileWriter(prepareCli(options));
+	return fileWriter(optionsFromCliParameters(options));
 };
 
 export default fileWriter;
