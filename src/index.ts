@@ -2,37 +2,51 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Script } from 'vm';
 
+export type FileWriterData = {
+	header?: {
+		path?: string;
+		[key: string]: unknown;
+	};
+	output?: {
+		path?: string;
+		url?: string;
+		body?: string;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+};
+
 export type FileWriterOptions = {
 	outDir?: string;
-	outFile?: { (data: Record<string, unknown>): string | Promise<string> };
-	renderer?: { (data: Record<string, unknown>): string | Promise<string> };
+	outFile?: { (data: FileWriterData): string | Promise<string> };
+	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
 };
 
 export const fileWriter = (options: FileWriterOptions) => {
 	let unnamedCounter = 1;
 	const {
 		outDir = 'build',
-		outFile = (data): string => (
-			data?.output?.['path']
+		outFile = (data: FileWriterData): string => (
+			data?.output?.path
 			|| (
-				data?.output?.['url']
-				|| data?.header?.['path']?.substring?.(0, data.header['path'].length - path.extname(data.header['path']).length)
+				data?.output?.url
+				|| data?.header?.path?.substring?.(0, data.header.path.length - path.extname(data.header.path).length)
 				|| `unnamed-${unnamedCounter++}`
 			) + '.html'
 		),
-		renderer = (data): string => '' + data?.output?.['body'],
+		renderer = (data: FileWriterData): string => '' + data?.output?.body,
 	} = options || {};
 
 	if (typeof outDir !== 'string') {
-		throw new Error('file-writer \'outDir\' argument error: expected a string.');
+		throw new Error('file-writer \'outDir\' parameter error: expected a string.');
 	}
 
 	if (typeof outFile !== 'function') {
-		throw new Error('file-writer \'outFile\' argument error: expected a function.');
+		throw new Error('file-writer \'outFile\' parameter error: expected a function.');
 	}
 
 	if (typeof renderer !== 'function') {
-		throw new Error('file-writer \'renderer\' argument error: expected a function.');
+		throw new Error('file-writer \'renderer\' parameter error: expected a function.');
 	}
 
 	const dirCache = new Set<string>();
@@ -46,7 +60,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 			dirCache.add(outputDirname);
 		}
 		if (fileCache.has(outputPath)) {
-			console.warn(`WARNING: Overwriting '${outputPath}': 'outFile()' generated same path for multiple inputs.`);
+			console.warn(`WARNING: Overwriting '${outputPath}'.`);
 		}
 		fileCache.add(outputPath);
 		fs.writeFileSync(outputPath, await renderer(data));
@@ -61,18 +75,17 @@ export const cli = (options: unknown = {}) => {
 
 	if (typeof outFile === 'string') {
 		if (!isFunctionLike.test(outFile)) {
-			throw new Error('\'outFile\' error: provided string does not look like a function.');
+			throw new Error('file-writer \'outFile\' parameter error: provided string does not look like a function.');
 		}
 		opts.outFile = new Script(outFile).runInNewContext();
 	}
 
-	if (typeof renderer !== 'string') {
-		throw new Error('Must provide \'renderer\' argument to file-writer.');
+	if (typeof renderer === 'string') {
+		if (!isFunctionLike.test(renderer)) {
+			throw new Error('file-writer \'renderer\' parameter error: provided string does not look like a function.');
+		}
+		opts.renderer = new Script(renderer).runInNewContext();
 	}
-	if (!isFunctionLike.test(renderer)) {
-		throw new Error('\'renderer\' error: provided string does not look like a function.');
-	}
-	opts.renderer = new Script(renderer).runInNewContext();
 
 	return fileWriter(opts);
 };
