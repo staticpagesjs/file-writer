@@ -6,12 +6,8 @@ export type FileWriterData = {
 		path?: string;
 		[key: string]: unknown;
 	};
-	output?: {
-		path?: string;
-		url?: string;
-		body?: string;
-		[key: string]: unknown;
-	};
+	url?: string;
+	body?: string;
 	[key: string]: unknown;
 };
 
@@ -20,26 +16,30 @@ export type FileWriterOptions = {
 	outFile?: { (data: FileWriterData): string | Promise<string> };
 	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
 	onOverwrite?: { (fileName: string): void };
-	unnamedPattern?: string;
+	onInvalidPath? (fileName: string): void;
 };
 
 export const fileWriter = (options: FileWriterOptions) => {
 	const {
 		outDir = 'dist',
 		outFile = (data: FileWriterData): string => (
-			data?.output?.path
-			|| (
-				data?.output?.url
-				|| data?.header?.path?.substring?.(0, data.header.path.length - path.extname(data.header.path).length)
+			(
+				data?.url ||
+				data?.header?.path?.substring?.(
+					0,
+					data.header.path.length - path.extname(data.header.path).length
+				)
 			) + '.html'
 		),
-		renderer = (data: FileWriterData): string => '' + data?.output?.body,
+		renderer = (data: FileWriterData): string => '' + data?.body,
 		onOverwrite = (fileName: string): void => console.warn(`WARNING: Overwriting '${fileName}'.`),
-		unnamedPattern = 'unnamed-%d.html',
+		onInvalidPath = (fileName: string): void => console.warn(`WARNING: Invalid file name '${fileName}'.`),
 	} = options || {};
 
 	if (typeof outDir !== 'string') {
 		throw new Error('file-writer \'outDir\' error: expected a string.');
+	} else if (['*', '?', '"', '<', '>', '|'].some(x => outDir.includes(x))) {
+		throw new Error('file-writer \'outDir\' error: directory name cannot contain any of the characters * ? " < > |');
 	}
 
 	if (typeof outFile !== 'function') {
@@ -54,16 +54,24 @@ export const fileWriter = (options: FileWriterOptions) => {
 		throw new Error('file-writer \'onOverwrite\' error: expected a function.');
 	}
 
-	if (typeof unnamedPattern !== 'string') {
-		throw new Error('file-writer \'unnamedPattern\' error: expected a string.');
+	if (typeof onInvalidPath !== 'function') {
+		throw new Error('file-writer \'onInvalidPath\' error: expected a function.');
 	}
 
 	const dirCache = new Set<string>();
 	const fileCache = new Set<string>();
 
-	let unnamedCounter = 0;
 	return async (data: Record<string, unknown>): Promise<void> => {
-		const outputPath = path.resolve(outDir, await outFile(data) || unnamedPattern.replace('%d', (++unnamedCounter).toString()));
+		const outputFilename = await outFile(data);
+		if (typeof outputFilename !== 'string') {
+			onInvalidPath('<non-string data type>');
+			return;
+		}
+		const outputPath = path.resolve(outDir, outputFilename);
+		if (!outputFilename || ['*', '?', '"', '<', '>', '|'].some(x => outputFilename.includes(x))) {
+			onInvalidPath(outputPath);
+			return;
+		}
 		const outputDirname = path.dirname(outputPath);
 		if (!dirCache.has(outputDirname)) {
 			fs.mkdirSync(outputDirname, { recursive: true });
