@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Script } from 'vm';
 
 export type FileWriterData = {
 	header?: {
@@ -20,11 +19,11 @@ export type FileWriterOptions = {
 	outDir?: string;
 	outFile?: { (data: FileWriterData): string | Promise<string> };
 	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
-	onOverwrite?: { (fileName: string): void | Promise<void> };
+	onOverwrite?: { (fileName: string): void };
+	unnamedPattern?: string;
 };
 
 export const fileWriter = (options: FileWriterOptions) => {
-	let unnamedCounter = 1;
 	const {
 		outDir = 'dist',
 		outFile = (data: FileWriterData): string => (
@@ -32,30 +31,39 @@ export const fileWriter = (options: FileWriterOptions) => {
 			|| (
 				data?.output?.url
 				|| data?.header?.path?.substring?.(0, data.header.path.length - path.extname(data.header.path).length)
-				|| `unnamed-${unnamedCounter++}`
 			) + '.html'
 		),
 		renderer = (data: FileWriterData): string => '' + data?.output?.body,
 		onOverwrite = (fileName: string): void => console.warn(`WARNING: Overwriting '${fileName}'.`),
+		unnamedPattern = 'unnamed-%d.html',
 	} = options || {};
 
 	if (typeof outDir !== 'string') {
-		throw new Error('file-writer \'outDir\' parameter error: expected a string.');
+		throw new Error('file-writer \'outDir\' error: expected a string.');
 	}
 
 	if (typeof outFile !== 'function') {
-		throw new Error('file-writer \'outFile\' parameter error: expected a function.');
+		throw new Error('file-writer \'outFile\' error: expected a function.');
 	}
 
 	if (typeof renderer !== 'function') {
-		throw new Error('file-writer \'renderer\' parameter error: expected a function.');
+		throw new Error('file-writer \'renderer\' error: expected a function.');
+	}
+
+	if (typeof onOverwrite !== 'function') {
+		throw new Error('file-writer \'onOverwrite\' error: expected a function.');
+	}
+
+	if (typeof unnamedPattern !== 'string') {
+		throw new Error('file-writer \'unnamedPattern\' error: expected a string.');
 	}
 
 	const dirCache = new Set<string>();
 	const fileCache = new Set<string>();
 
+	let unnamedCounter = 0;
 	return async (data: Record<string, unknown>): Promise<void> => {
-		const outputPath = path.resolve(outDir, await outFile(data));
+		const outputPath = path.resolve(outDir, await outFile(data) || unnamedPattern.replace('%d', (++unnamedCounter).toString()));
 		const outputDirname = path.dirname(outputPath);
 		if (!dirCache.has(outputDirname)) {
 			fs.mkdirSync(outputDirname, { recursive: true });
@@ -68,30 +76,5 @@ export const fileWriter = (options: FileWriterOptions) => {
 		fs.writeFileSync(outputPath, await renderer(data));
 	};
 };
-
-const isFunctionLike = /^\s*(?:async)?\s*(?:\([a-zA-Z0-9_, ]*\)\s*=>|[a-zA-Z0-9_,]+\s*=>|function\s*\*?\s*[a-zA-Z0-9_,]*\s*\([a-zA-Z0-9_,]*\)\s*{)/;
-
-export const fileWriterOptionsFromCliParameters = (cliParams: Record<string, unknown> = {}) => {
-	const { outFile, renderer, ...rest } = cliParams;
-	const options = { ...rest };
-
-	if (typeof outFile === 'string') {
-		if (!isFunctionLike.test(outFile)) {
-			throw new Error('file-writer \'outFile\' parameter error: provided string does not look like a function.');
-		}
-		options.outFile = new Script(outFile).runInNewContext();
-	}
-
-	if (typeof renderer === 'string') {
-		if (!isFunctionLike.test(renderer)) {
-			throw new Error('file-writer \'renderer\' parameter error: provided string does not look like a function.');
-		}
-		options.renderer = new Script(renderer).runInNewContext();
-	}
-
-	return options;
-};
-
-export const cli = (cliParams: Record<string, unknown> = {}) => fileWriter(fileWriterOptionsFromCliParameters(cliParams));
 
 export default fileWriter;
