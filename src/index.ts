@@ -20,6 +20,7 @@ export type FileWriterOptions = {
 	outDir?: string;
 	outFile?: { (data: FileWriterData): string | Promise<string> };
 	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
+	onOverwrite?: { (fileName: string): void | Promise<void> };
 };
 
 export const fileWriter = (options: FileWriterOptions) => {
@@ -35,6 +36,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 			) + '.html'
 		),
 		renderer = (data: FileWriterData): string => '' + data?.output?.body,
+		onOverwrite = (fileName: string): void => console.warn(`WARNING: Overwriting '${fileName}'.`),
 	} = options || {};
 
 	if (typeof outDir !== 'string') {
@@ -60,7 +62,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 			dirCache.add(outputDirname);
 		}
 		if (fileCache.has(outputPath)) {
-			console.warn(`WARNING: Overwriting '${outputPath}'.`);
+			onOverwrite?.(outputPath);
 		}
 		fileCache.add(outputPath);
 		fs.writeFileSync(outputPath, await renderer(data));
