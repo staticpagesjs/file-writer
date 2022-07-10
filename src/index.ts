@@ -26,7 +26,7 @@ export type FileWriterOptions = {
 export const fileWriter = (options: FileWriterOptions) => {
 	let unnamedCounter = 1;
 	const {
-		outDir = 'build',
+		outDir = 'dist',
 		outFile = (data: FileWriterData): string => (
 			data?.output?.path
 			|| (
