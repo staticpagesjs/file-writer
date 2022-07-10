@@ -16,7 +16,7 @@ export type FileWriterOptions = {
 	outFile?: { (data: FileWriterData): string | Promise<string> };
 	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
 	onOverwrite?: { (fileName: string): void };
-	onInvalidPath? (fileName: string): void;
+	onInvalidPath? (fileName: unknown): void;
 };
 
 export const fileWriter = (options: FileWriterOptions) => {
@@ -33,7 +33,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 		),
 		renderer = (data: FileWriterData): string => '' + data?.body,
 		onOverwrite = (fileName: string): void => console.warn(`WARNING: Overwriting '${fileName}'.`),
-		onInvalidPath = (fileName: string): void => console.warn(`WARNING: Invalid file name '${fileName}'.`),
+		onInvalidPath = (fileName: unknown): void => console.warn(`WARNING: Invalid file name '${typeof fileName === 'string' ? fileName : '<' + typeof fileName + '>' }'.`),
 	} = options || {};
 
 	if (typeof outDir !== 'string') {
@@ -64,7 +64,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 	return async (data: Record<string, unknown>): Promise<void> => {
 		const outputFilename = await outFile(data);
 		if (typeof outputFilename !== 'string') {
-			onInvalidPath('<non-string data type>');
+			onInvalidPath(outputFilename);
 			return;
 		}
 		const outputPath = path.resolve(outDir, outputFilename);
