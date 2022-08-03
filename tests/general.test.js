@@ -24,9 +24,10 @@ test('it writes a simple data object to file #1', async () => {
 		body: generatedFileContents,
 	});
 
-	const outputExists = fs.existsSync(path.join(outDir, 'path/to/file.html'));
+	const expectedPath = path.join(outDir, 'path/to/file.html');
 
-	expect(outputExists).toStrictEqual(true);
+	expect(fs.existsSync(expectedPath)).toBe(true);
+	expect(fs.readFileSync(expectedPath, 'utf-8')).toBe(generatedFileContents);
 });
 
 test('it writes a simple data object to file #2', async () => {
@@ -42,9 +43,10 @@ test('it writes a simple data object to file #2', async () => {
 		}
 	});
 
-	const outputExists = fs.existsSync(path.join(outDir, 'path/to/file.html'));
+	const expectedPath = path.join(outDir, 'path/to/file.html');
 
-	expect(outputExists).toStrictEqual(true);
+	expect(fs.existsSync(expectedPath)).toBe(true);
+	expect(fs.readFileSync(expectedPath, 'utf-8')).toBe(generatedFileContents);
 });
 
 test('works with custom outFile()', async () => {
@@ -63,7 +65,8 @@ test('works with custom outFile()', async () => {
 		},
 	});
 
-	const outputExists = fs.existsSync(path.join(outDir, 'path/to/file.html'));
+	const expectedPath = path.join(outDir, 'path/to/file.html');
 
-	expect(outputExists).toStrictEqual(true);
+	expect(fs.existsSync(expectedPath)).toBe(true);
+	expect(fs.readFileSync(expectedPath, 'utf-8')).toBe(generatedFileContents);
 });
