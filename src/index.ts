@@ -1,28 +1,30 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export type FileWriterData = {
-	header?: {
-		path?: string;
+export namespace fileWriter {
+	export type Data = {
+		header?: {
+			path?: string;
+			[key: string]: unknown;
+		};
+		url?: string;
+		body?: string;
 		[key: string]: unknown;
 	};
-	url?: string;
-	body?: string;
-	[key: string]: unknown;
-};
 
-export type FileWriterOptions = {
-	outDir?: string;
-	outFile?: { (data: FileWriterData): string | Promise<string> };
-	renderer?: { (data: FileWriterData): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
-	onOverwrite?: { (fileName: string): void };
-	onInvalidPath? (fileName: unknown): void;
-};
+	export type Options = {
+		outDir?: string;
+		outFile?: { (data: fileWriter.Data): string | Promise<string> };
+		renderer?: { (data: fileWriter.Data): string | NodeJS.ArrayBufferView | Promise<string | NodeJS.ArrayBufferView> };
+		onOverwrite?: { (fileName: string): void };
+		onInvalidPath? (fileName: unknown): void;
+	};
+}
 
-export const fileWriter = (options: FileWriterOptions) => {
+export const fileWriter = (options: fileWriter.Options) => {
 	const {
 		outDir = 'dist',
-		outFile = (data: FileWriterData): string => (
+		outFile = (data: fileWriter.Data): string => (
 			(
 				data?.url ||
 				data?.header?.path?.substring?.(
@@ -31,7 +33,7 @@ export const fileWriter = (options: FileWriterOptions) => {
 				)
 			) + '.html'
 		),
-		renderer = (data: FileWriterData): string => '' + data?.body,
+		renderer = (data: fileWriter.Data): string => '' + data?.body,
 		onOverwrite = (fileName: string): void => console.warn(`WARNING: Overwriting '${fileName}'.`),
 		onInvalidPath = (fileName: unknown): void => console.warn(`WARNING: Invalid file name '${typeof fileName === 'string' ? fileName : '<' + typeof fileName + '>' }'.`),
 	} = options || {};
