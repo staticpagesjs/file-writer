@@ -18,10 +18,12 @@ test('it writes a simple data object to file #1', async () => {
 	});
 
 	await write({
-		header: {
-			path: 'path/to/file.txt',
-		},
-		body: generatedFileContents,
+		value: {
+			header: {
+				path: 'path/to/file.txt',
+			},
+			body: generatedFileContents,
+		}
 	});
 
 	const expectedPath = path.join(outDir, 'path/to/file.html');
@@ -37,9 +39,11 @@ test('it writes a simple data object to file #2', async () => {
 	});
 
 	await write({
-		url: 'path/to/file',
-		output: {
-			body: generatedFileContents,
+		value: {
+			url: 'path/to/file',
+			output: {
+				body: generatedFileContents,
+			}
 		}
 	});
 
@@ -59,10 +63,12 @@ test('works with custom outFile()', async () => {
 	});
 
 	await write({
-		name: 'path/to/file.html',
-		output: {
-			body: generatedFileContents,
-		},
+		value: {
+			name: 'path/to/file.html',
+			output: {
+				body: generatedFileContents,
+			}
+		}
 	});
 
 	const expectedPath = path.join(outDir, 'path/to/file.html');

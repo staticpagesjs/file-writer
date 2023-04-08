@@ -23,6 +23,8 @@ write(pageData);
 
 ## Docs
 
+`@static-pages/file-writer@5` and higher versions are compatible with `@static-pages/core@6` and higher versions.
+
 ### __`writer(options: Options): void`__
 
 #### `Options`

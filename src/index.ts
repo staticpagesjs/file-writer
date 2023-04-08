@@ -63,8 +63,10 @@ export const fileWriter = (options: fileWriter.Options) => {
 	const dirCache = new Set<string>();
 	const fileCache = new Set<string>();
 
-	return async (data: Record<string, unknown>): Promise<void> => {
-		const outputFilename = await outFile(data);
+	return async (data: IteratorResult<Record<string, unknown>>): Promise<void> => {
+		if (data.done) return;
+
+		const outputFilename = await outFile(data.value);
 		if (typeof outputFilename !== 'string') {
 			onInvalidPath(outputFilename);
 			return;
@@ -83,7 +85,7 @@ export const fileWriter = (options: fileWriter.Options) => {
 			onOverwrite?.(outputPath);
 		}
 		fileCache.add(outputPath);
-		fs.writeFileSync(outputPath, await renderer(data));
+		fs.writeFileSync(outputPath, await renderer(data.value));
 	};
 };
 
