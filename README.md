@@ -18,7 +18,7 @@ const pageData = {
   body: '[file contents]',
 };
 
-write(pageData);
+write({ value: pageData });
 ```
 
 ## Docs
