@@ -1,6 +1,6 @@
 {
   "name": "@static-pages/file-writer",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Generic file writer implementation for @static-pages/core.",
   "type": "module",
   "main": "cjs/index.js",
