@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+export const isAsyncIterable = <T>(x: unknown): x is AsyncIterable<T> => !!x && typeof x === 'object' && Symbol.asyncIterator in x && typeof x[Symbol.asyncIterator] === 'function';
+
 export namespace fileWriter {
 	export type Data = {
 		header?: {
@@ -63,10 +65,8 @@ export const fileWriter = (options: fileWriter.Options) => {
 	const dirCache = new Set<string>();
 	const fileCache = new Set<string>();
 
-	return async (data: IteratorResult<Record<string, unknown>>): Promise<void> => {
-		if (data.done) return;
-
-		const outputFilename = await outFile(data.value);
+	async function onePass(data: Record<string, unknown>) {
+		const outputFilename = await outFile(data);
 		if (typeof outputFilename !== 'string') {
 			onInvalidPath(outputFilename);
 			return;
@@ -85,7 +85,18 @@ export const fileWriter = (options: fileWriter.Options) => {
 			onOverwrite?.(outputPath);
 		}
 		fileCache.add(outputPath);
-		fs.writeFileSync(outputPath, await renderer(data.value));
+		fs.writeFileSync(outputPath, await renderer(data));
+	}
+
+	return async (data: IteratorResult<Record<string, unknown>> | AsyncIterable<Record<string, unknown>>): Promise<void> => {
+		if (isAsyncIterable(data)) {
+			for await (const item of data) {
+				await onePass(item);
+			}
+		} else {
+			if (data.done) return;
+			await onePass(data.value);
+		}
 	};
 };
 
