@@ -74,6 +74,25 @@ test('it writes a simple data object to file #3', async () => {
 	expect(fs.readFileSync(expectedPath, 'utf-8')).toBe(generatedFileContents);
 });
 
+test('it writes a simple data object to file #4', async () => {
+	const write = writer({
+		outDir: outDir,
+		renderer,
+	});
+
+	await write({
+		url: 'path/to/file',
+		output: {
+			body: generatedFileContents,
+		}
+	});
+
+	const expectedPath = path.join(outDir, 'path/to/file.html');
+
+	expect(fs.existsSync(expectedPath)).toBe(true);
+	expect(fs.readFileSync(expectedPath, 'utf-8')).toBe(generatedFileContents);
+});
+
 test('works with custom outFile()', async () => {
 	const write = writer({
 		outDir: outDir,

@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export const isAsyncIterable = <T>(x: unknown): x is AsyncIterable<T> => !!x && typeof x === 'object' && Symbol.asyncIterator in x && typeof x[Symbol.asyncIterator] === 'function';
+export const isIteratorResult = <T>(x: unknown): x is IteratorResult<T> => !!x && typeof x === 'object' && ('done' in x || 'value' in x);
 
 export namespace fileWriter {
 	export type Data = {
@@ -88,14 +89,16 @@ export const fileWriter = (options: fileWriter.Options) => {
 		fs.writeFileSync(outputPath, await renderer(data));
 	}
 
-	return async (data: IteratorResult<Record<string, unknown>> | AsyncIterable<Record<string, unknown>>): Promise<void> => {
+	return async (data: Record<string, unknown> | IteratorResult<Record<string, unknown>> | AsyncIterable<Record<string, unknown>>): Promise<void> => {
 		if (isAsyncIterable(data)) {
 			for await (const item of data) {
 				await onePass(item);
 			}
-		} else {
+		} else if (isIteratorResult(data)) {
 			if (data.done) return;
 			await onePass(data.value);
+		} else {
+			await onePass(data);
 		}
 	};
 };
